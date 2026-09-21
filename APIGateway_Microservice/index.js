@@ -45,13 +45,13 @@ function authRole(role) {
 //REDIRECT TO THE USER MICROSERVICE
 app.use('/user',authToken, authRole('user'), (req, res) => {
     console.log("INSIDE API GATEWAY USER ROUTE")
-    proxy.web(req, res, { target: 'http://localhost:5000' });
+    proxy.web(req, res, { target: 'http://35.175.178.76:5000' });
 })
 
 //REDIRECT TO THE ADMIN MICROSERVICE
 app.use('/admin', authToken, authRole('admin'),(req, res) => {
     console.log("INSIDE API GATEWAY admin ROUTE")
-    proxy.web(req, res, { target: 'http://localhost:5001' });
+    proxy.web(req, res, { target: 'http://52.90.158.50:5001' });
 })
 
 //REDIRECT TO THE REGISTRATION MICROSERVICE, public, no token required
@@ -68,6 +68,6 @@ app.use('/auth', (req, res) => {
     proxy.web(req, res, { target: 'http://localhost:5002' });
 })
 
-app.listen(4000, () => {
+app.listen(4000, '0.0.0.0', () => {
     console.log("API Gateway Service is running on PORT NO : 4000")
 })

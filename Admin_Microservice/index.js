@@ -62,5 +62,5 @@ app.delete('/deluser', async (req, res) => {
     }
 });
 
-app.listen(5001, () =>
+app.listen(5001, '0.0.0.0', () =>
     console.log('EXPRESS Server Started at Port No: 5001'));

@@ -78,5 +78,5 @@ app.put('/updateprofile', identifyUser, async (req, res) => {
 });
 
 // START THE EXPRESS SERVER
-app.listen(5000, () =>
+app.listen(5000, '0.0.0.0', () =>
     console.log('EXPRESS Server Started at Port No: 5000'));

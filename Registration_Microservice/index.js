@@ -82,4 +82,4 @@ app.post('/register/userregister', async (req, res) => {
 });
 
 // START THE EXPRESS SERVER. 5003 is the PORT NUMBER
-app.listen(5003, () => console.log('EXPRESS Server Started at Port No: 5003'));
+app.listen(5003, '0.0.0.0', () => console.log('EXPRESS Server Started at Port No: 5003'));
