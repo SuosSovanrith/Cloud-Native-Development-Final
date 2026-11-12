@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-registration-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway-registration
+  template:
+    metadata:
+      labels:
+        app: gateway-registration
+    spec:
+      containers:
+        - name: api-gateway
+          image: suossovanrith/api-gateway:2.0
+          ports:
+            - containerPort: 4000
+          env:
+            - name: REGISTER_SERVICE_URL
+              value: http://127.0.0.1:5003
+            - name: DELETE_SERVICE_URL
+              value: http://delete-service:5004
+        - name: registration
+          image: suossovanrith/registration-microservice:1.0
+          ports:
+            - containerPort: 5003
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: MONGODB_URI
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: delete-student-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: delete-student
+  template:
+    metadata:
+      labels:
+        app: delete-student
+    spec:
+      containers:
+        - name: delete-student
+          image: suossovanrith/delete-student:1.0
+          ports:
+            - containerPort: 5004
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: MONGODB_URI

@@ -6,18 +6,17 @@ app.use(bodyParser.json());
 
 const bcrypt = require('bcrypt');
 const dbconnect = require('./dbconnect.js');
-const PersonModel = require('./user_schema.js');
+const StudentModel = require('./student_schema.js');
 
 /*
 In Postman use the following URL:
 localhost:5003/register/userregister
 
 {
-  "name":"Joe",
-  "email":"a@gmail.com",
-  "password":"abc",
-  "mobile": 12345678,
-  "role": "user"
+  "Student_name": "Joe",
+  "student_email": "joe@gmail.com",
+  "student_password": "abc123",
+  "student_mobile": 12345678
 }
 */
 
@@ -27,6 +26,15 @@ function uniqueid(min, max) {
   );
 }
 
+// KEEP GENERATING UNTIL THE STUDENT ID IS NOT ALREADY USED
+async function generateStudentId() {
+  let id;
+  do {
+    id = uniqueid(1000, 9999);
+  } while (await StudentModel.exists({ Student_id: id }));
+  return id;
+}
+
 const SALT_ROUNDS = 10;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -34,50 +42,54 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 app.post('/register/userregister', async (req, res) => {
   console.log("REG API EXECUTED");
 
-  const { name, email, password, mobile, role } = req.body;
+  const { Student_name, student_email, student_password, student_mobile } = req.body;
 
   // STEP 1: VALIDATE INPUT
-  if (!name || !email || !password) {
-    return res.status(400).send({ message: 'name, email, and password are required' });
+  if (!Student_name || !student_email || !student_password) {
+    return res.status(400).send({ message: 'Student_name, student_email, and student_password are required' });
   }
-  if (!EMAIL_REGEX.test(email)) {
+  if (!EMAIL_REGEX.test(student_email)) {
     return res.status(400).send({ message: 'Invalid email format' });
   }
-  if (password.length < 6) {
+  if (student_password.length < 6) {
     return res.status(400).send({ message: 'Password must be at least 6 characters' });
   }
 
   try {
     // STEP 2: CHECK EMAIL (explicit pre-check)
-    const existingUser = await PersonModel.findOne({ email: email });
-    if (existingUser) {
+    const existingStudent = await StudentModel.findOne({ student_email: student_email });
+    if (existingStudent) {
       return res.status(409).send({ message: 'Email already registered' });
     }
 
     // STEP 3: HASH PASSWORD
-    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    const hashedPassword = await bcrypt.hash(student_password, SALT_ROUNDS);
 
     // STEP 4: STORE IN MONGODB
-    const pobj = new PersonModel({
-      _id: uniqueid(1000, 9999),
-      name: name,
-      email: email,
-      password: hashedPassword,
-      phone: mobile,
-      role: role
+    const studentId = await generateStudentId();
+
+    const sobj = new StudentModel({
+      Student_id: studentId,
+      Student_name: Student_name,
+      student_mobile: student_mobile,
+      student_email: student_email,
+      student_password: hashedPassword
     });
 
-    await pobj.save();
+    await sobj.save();
 
-    // STEP 5: RETURN SUCCESS
-    res.status(200).send({ message: 'DOCUMENT INSERTED IN MONGODB DATABASE' });
+    // STEP 5: RETURN SUCCESS (with the new id, so you can use it for delete)
+    res.status(200).send({
+      message: 'DOCUMENT INSERTED IN MONGODB DATABASE',
+      Student_id: studentId
+    });
 
   } catch (err) {
     // Safety net: catches the rare race-condition duplicate that slips past findOne
     if (err.code === 11000) {
       return res.status(409).send({ message: 'Email already registered' });
     }
-    res.status(500).send({ message: err.message || 'Error in Employee Save' });
+    res.status(500).send({ message: err.message || 'Error in Student Save' });
   }
 });
 

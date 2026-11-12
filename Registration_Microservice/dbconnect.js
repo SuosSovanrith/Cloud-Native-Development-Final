@@ -1,8 +1,15 @@
+require('dotenv').config();
+
 // STEP-1 : IMPORT MONGOOSE PACKAGE
 const mongoose = require('mongoose');
 
 // Database Connection URL
-const uri = "mongodb://suos089_db_user:halGKLntaFTuvFH6@ac-dmwozsn-shard-00-00.iteou5n.mongodb.net:27017,ac-dmwozsn-shard-00-01.iteou5n.mongodb.net:27017,ac-dmwozsn-shard-00-02.iteou5n.mongodb.net:27017/cloudnativedev?ssl=true&replicaSet=atlas-11kb2h-shard-0&authSource=admin&appName=suos-cluster-67";
+const uri = process.env.MONGODB_URI;
+
+if (!uri) {
+  console.error('MONGODB_URI is not set. Check your .env file or environment variables.');
+  process.exit(1);
+}
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
 

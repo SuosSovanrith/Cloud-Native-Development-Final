@@ -9,12 +9,22 @@ const jwt = require('jsonwebtoken')
 require('dotenv').config()
 const JWT_SECRETE = process.env.JWT_SECRETE;
 
+// TARGET URLS (set by Kubernetes env vars, defaults are for running locally)
+const REGISTER_SERVICE_URL = process.env.REGISTER_SERVICE_URL || 'http://127.0.0.1:5003';
+const DELETE_SERVICE_URL = process.env.DELETE_SERVICE_URL || 'http://127.0.0.1:5004';
+
+// IF A TARGET IS DOWN, RETURN 502 INSTEAD OF CRASHING THE GATEWAY
+proxy.on('error', (err, req, res) => {
+    console.error('Proxy error:', err.message);
+    res.status(502).json({ message: 'Bad gateway: target service unreachable' });
+});
+
 function authToken(req, res, next) {
     console.log(req.headers.authorization)
     const header = req?.headers.authorization;
     const token = header && header.split(' ')[1];
 
-        // CASE 1: NO TOKEN
+    // CASE 1: NO TOKEN
     if (!token) {
         return res.status(401).json({ message: 'Please send token' });
     }
@@ -42,30 +52,18 @@ function authRole(role) {
     }
 }
 
-//REDIRECT TO THE USER MICROSERVICE
-app.use('/user',authToken, authRole('user'), (req, res) => {
-    console.log("INSIDE API GATEWAY USER ROUTE")
-    proxy.web(req, res, { target: 'http://35.175.178.76:5000' });
-})
-
-//REDIRECT TO THE ADMIN MICROSERVICE
-app.use('/admin', authToken, authRole('admin'),(req, res) => {
-    console.log("INSIDE API GATEWAY admin ROUTE")
-    proxy.web(req, res, { target: 'http://52.90.158.50:5001' });
-})
-
 //REDIRECT TO THE REGISTRATION MICROSERVICE, public, no token required
 app.use('/register', (req, res) => {
     console.log("INSIDE API GATEWAY register ROUTE")
     req.url = req.originalUrl;
-    proxy.web(req, res, { target: 'http://localhost:5003' });
+    proxy.web(req, res, { target: REGISTER_SERVICE_URL });
 })
 
-//REDIRECT TO THE LOGIN(Authentication) MICROSERVICE
-app.use('/auth', (req, res) => {
-    console.log("INSIDE API GATEWAY login ROUTE")
+//REDIRECT TO THE DELETE STUDENT MICROSERVICE
+app.use('/student', (req, res) => {
+    console.log("INSIDE API GATEWAY student ROUTE")
     req.url = req.originalUrl;
-    proxy.web(req, res, { target: 'http://localhost:5002' });
+    proxy.web(req, res, { target: DELETE_SERVICE_URL });
 })
 
 app.listen(4000, '0.0.0.0', () => {
